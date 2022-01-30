@@ -126,9 +126,10 @@ async function execute(message, serverQueue) {
   function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
-      serverQueue.voiceChannel.leave();
-      queue.delete(guild.id);
-      return;
+        client.user.setPresence({ activity: { name: 'nothing' }, status: 'online' });
+        serverQueue.voiceChannel.leave();
+        queue.delete(guild.id);
+        return;
     }
   
     const dispatcher = serverQueue.connection
