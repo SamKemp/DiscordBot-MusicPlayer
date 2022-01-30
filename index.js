@@ -12,7 +12,7 @@ var prefix = '$';
 
 client.on("ready", () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    client.user.setPresence({ activity: { name: 'nothing' }, status: 'online' });
+    client.user.setPresence({ activity: { type: 'STREAMING', name: "Various Songs" }, status: 'online' });
 })
 client.once('reconnecting', () => {
     console.log('Reconnecting!');
@@ -34,8 +34,12 @@ client.on("message", message => {
 
     const serverQueue = queue.get(message.guild.id);
 
-    if (message.content.startsWith(`${prefix}play`)) {
+    if (message.content.startsWith(`${prefix}help`))
+    {
+        message.channel.send(`I am a simple music bot!\nMy commands are as follows\n${prefix}help - shows this help command\n${prefix}play <youtube url> - adds the linked youtube video to the queue or starts playing if queue is empty\n${prefix}skip - skips the current song in queue\n${prefix}stop - stops me playing all together`);
+    } else if (message.content.startsWith(`${prefix}play`)) {
         execute(message, serverQueue);
+        message.delete().catch(console.error);
         return;
     } else if (message.content.startsWith(`${prefix}skip`)) {
         skip(message, serverQueue);
@@ -102,7 +106,7 @@ async function execute(message, serverQueue) {
   function skip(message, serverQueue) {
     if (!message.member.voice.channel)
       return message.channel.send(
-        "You have to be in a voice channel to stop the music!"
+        "You have to be in a voice channel to skip songs!"
       );
     if (!serverQueue)
       return message.channel.send("There is no song that I could skip!");
@@ -120,13 +124,11 @@ async function execute(message, serverQueue) {
       
     serverQueue.songs = [];
     serverQueue.connection.dispatcher.end();
-    client.user.setPresence({ activity: { name: 'nothing' }, status: 'online' });
   }
   
   function play(guild, song) {
     const serverQueue = queue.get(guild.id);
     if (!song) {
-        client.user.setPresence({ activity: { name: 'nothing' }, status: 'online' });
         serverQueue.voiceChannel.leave();
         queue.delete(guild.id);
         return;
@@ -141,7 +143,6 @@ async function execute(message, serverQueue) {
       .on("error", error => console.error(error));
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     serverQueue.textChannel.send(`Start playing: **${song.title}**`);
-    client.user.setPresence({ activity: { name: song.title }, status: 'online' });
   }
 
 client.login(process.env.BOT_TOKEN);
