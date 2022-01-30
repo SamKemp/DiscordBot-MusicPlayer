@@ -12,6 +12,7 @@ var prefix = '$';
 
 client.on("ready", () => {
     console.log(`Logged in as ${client.user.tag}!`);
+    client.user.setPresence({ activity: { name: 'nothing' }, status: 'online' });
 })
 client.once('reconnecting', () => {
     console.log('Reconnecting!');
@@ -119,6 +120,7 @@ async function execute(message, serverQueue) {
       
     serverQueue.songs = [];
     serverQueue.connection.dispatcher.end();
+    client.user.setPresence({ activity: { name: 'nothing' }, status: 'online' });
   }
   
   function play(guild, song) {
@@ -138,6 +140,7 @@ async function execute(message, serverQueue) {
       .on("error", error => console.error(error));
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+    client.user.setPresence({ activity: { name: song.title }, status: 'online' });
   }
 
 client.login(process.env.BOT_TOKEN);
