@@ -20,16 +20,16 @@ client.once('disconnect', () => {
     console.log('Disconnect!');
 });
 
-client.on("message", msg => {
+client.on("message", message => {
 
     // Ignore DM's
-    if(!msg.guild) return;
+    if(!message.guild) return;
 
     // Ignore self
-    if(msg.author.bot) return;
+    if(message.author.bot) return;
 
     // Ignore non prefixed messages
-    if(!msg.content.startsWith(prefix)) return;
+    if(!message.content.startsWith(prefix)) return;
 
     const serverQueue = queue.get(message.guild.id);
 
