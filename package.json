@@ -1,0 +1,27 @@
+{
+  "name": "discordbot-musicplayer",
+  "version": "1.0.0",
+  "description": "A Discord Bot that plays music in servers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamKemp/DiscordBot-MusicPlayer.git"
+  },
+  "author": "SamKemp55",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamKemp/DiscordBot-MusicPlayer/issues"
+  },
+  "homepage": "https://github.com/SamKemp/DiscordBot-MusicPlayer#readme",
+  "dependencies": {
+    "discord.js": "^12.5.3",
+    "dotenv": "^10.0.0",
+    "ffmpeg": "^0.0.4",
+    "fluent-ffmpeg": "^2.1.2",
+    "@discordjs/opus": "^0.7.0",
+    "ytdl-core": "^4.10.0"
+  }
+}
