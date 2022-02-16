@@ -1,13 +1,12 @@
-require('dotenv').config();
+const { bot_token, prefix, youtube_key, youtube_ID, youtube_secret, youtube_token, guilds } = require('./config.json');
+
+const fs = require('fs');
 
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const ytdl = require('ytdl-core');
 
 const queue = new Map();
-
-// Command prefix
-const prefix = '$';
 
 
 client.on('ready', () => {
@@ -34,7 +33,7 @@ client.on('message', message => {
 
     const serverQueue = queue.get(message.guild.id);
 
-    if (message.content.equals(prefix + 'help')) {
+    if (message.content === prefix + 'help') {
       let helpText = 'I am a simple music bot!';
       helpText += '\nMy commands are as follows';
       helpText += '\n' + prefix + 'help - shows this help command';
@@ -49,17 +48,17 @@ client.on('message', message => {
       message.delete().catch(console.error);
       return;
     }
-    else if (message.content.equals(prefix + 'countdown')) {
+    else if (message.content === prefix + 'countdown') {
       message.content = '$play https://www.youtube.com/watch?v=NNiTxUEnmKI';
       execute(message, serverQueue);
       message.delete().catch(console.error);
       return;
     }
-    else if (message.content.equals(prefix + 'skip')) {
+    else if (message.content === prefix + 'skip') {
         skip(message, serverQueue);
         return;
     }
-    else if (message.content.equals(prefix + 'stop')) {
+    else if (message.content === prefix + 'stop') {
         stop(message, serverQueue);
         return;
     }
@@ -151,4 +150,26 @@ client.on('message', message => {
     serverQueue.textChannel.send(`Start playing: **${song.title}**`);
   }
 
-client.login(process.env.BOT_TOKEN);
+function deployCommands(clientID, guildID, token) {
+  const { SlashCommandBuilder } = require('@discordjs/builders');
+  const { REST } = require('@discordjs/rest');
+  const { Routes } = require('discord-api-types/v9');
+
+  const commands = [
+    // new SlashCommandBuilder().setName('help').setDescription('Replies with pong!'),
+    new SlashCommandBuilder().setName('play').setDescription('Adds a linked youtube video to the queue or starts playing if queue is empty!'),
+    new SlashCommandBuilder().setName('skip').setDescription('Skips the current song in queue!'),
+    new SlashCommandBuilder().setName('stop').setDescription('Stops me playing all together!'),
+    new SlashCommandBuilder().setName('countdown').setDescription('The Final Countdown · Europe'),
+  ]
+    .map(command => command.toJSON());
+
+  const rest = new REST({ version: '9' }).setToken(token);
+
+  rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands })
+    .then(() => console.log('Successfully registered application commands.'))
+    .catch(console.error);
+}
+
+// Bot Login
+client.login(bot_token);
