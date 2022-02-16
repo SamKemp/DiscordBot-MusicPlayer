@@ -34,32 +34,32 @@ client.on('message', message => {
 
     const serverQueue = queue.get(message.guild.id);
 
-    if (message.content.startsWith(`${prefix}help`)) {
+    if (message.content.equals(prefix + 'help')) {
       let helpText = 'I am a simple music bot!';
       helpText += '\nMy commands are as follows';
-      helpText += '\n${prefix}help - shows this help command';
-      helpText += '\n${prefix}play <youtube url> - adds the linked youtube video to the queue or starts playing if queue is empty';
-      helpText += '\n${prefix}skip - skips the current song in queue';
-      helpText += '\n${prefix}stop - stops me playing all together';
+      helpText += '\n' + prefix + 'help - shows this help command';
+      helpText += '\n' + prefix + 'play <youtube url> - adds the linked youtube video to the queue or starts playing if queue is empty';
+      helpText += '\n' + prefix + 'skip - skips the current song in queue';
+      helpText += '\n' + prefix + 'stop - stops me playing all together';
 
       message.channel.send(helpText);
     }
-    else if (message.content.startsWith(`${prefix}play`)) {
+    else if (message.content.startsWith(prefix + 'play')) {
       execute(message, serverQueue);
       message.delete().catch(console.error);
       return;
     }
-    else if (message.content.startsWith(`${prefix}countdown`)) {
+    else if (message.content.equals(prefix + 'countdown')) {
       message.content = '$play https://www.youtube.com/watch?v=NNiTxUEnmKI';
       execute(message, serverQueue);
       message.delete().catch(console.error);
       return;
     }
-    else if (message.content.equals(`${prefix}skip`)) {
+    else if (message.content.equals(prefix + 'skip')) {
         skip(message, serverQueue);
         return;
     }
-    else if (message.content.startsWith(`${prefix}stop`)) {
+    else if (message.content.equals(prefix + 'stop')) {
         stop(message, serverQueue);
         return;
     }
@@ -139,7 +139,7 @@ client.on('message', message => {
         queue.delete(guild.id);
         return;
     }
-  
+
     const dispatcher = serverQueue.connection
       .play(ytdl(song.url))
       .on('finish', () => {
