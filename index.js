@@ -1,175 +1,32 @@
-const { bot_token, prefix, youtube_key, youtube_ID, youtube_secret, youtube_token, guilds } = require('./config.json');
+const { bot_token } = require('./config.json');
 
+const { Client, Collection, Intents } = require('discord.js');
 const fs = require('fs');
 
-const Discord = require('discord.js');
-const client = new Discord.Client();
-const ytdl = require('ytdl-core');
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES] });
+client.commands = new Collection();
 
-const queue = new Map();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-
-client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
-  client.user.setPresence({ activity: { type: 'STREAMING', name: 'Various Songs' }, status: 'online' });
-});
-client.once('reconnecting', () => {
-    console.log('Reconnecting!');
-});
-client.once('disconnect', () => {
-    console.log('Disconnect!');
-});
-
-client.on('message', message => {
-
-    // Ignore DM's
-    if (!message.guild) return;
-
-    // Ignore self
-    if (message.author.bot) return;
-
-    // Ignore non prefixed messages
-    if (!message.content.startsWith(prefix)) return;
-
-    const serverQueue = queue.get(message.guild.id);
-
-    if (message.content === prefix + 'help') {
-      let helpText = 'I am a simple music bot!';
-      helpText += '\nMy commands are as follows';
-      helpText += '\n' + prefix + 'help - shows this help command';
-      helpText += '\n' + prefix + 'play <youtube url> - adds the linked youtube video to the queue or starts playing if queue is empty';
-      helpText += '\n' + prefix + 'skip - skips the current song in queue';
-      helpText += '\n' + prefix + 'stop - stops me playing all together';
-
-      message.channel.send(helpText);
-    }
-    else if (message.content.startsWith(prefix + 'play')) {
-      execute(message, serverQueue);
-      message.delete().catch(console.error);
-      return;
-    }
-    else if (message.content === prefix + 'countdown') {
-      message.content = '$play https://www.youtube.com/watch?v=NNiTxUEnmKI';
-      execute(message, serverQueue);
-      message.delete().catch(console.error);
-      return;
-    }
-    else if (message.content === prefix + 'skip') {
-        skip(message, serverQueue);
-        return;
-    }
-    else if (message.content === prefix + 'stop') {
-        stop(message, serverQueue);
-        return;
-    }
-    else {
-        message.channel.send('You need to enter a valid command!');
-    }
-
-});
-
-  async function execute(message, serverQueue) {
-    const args = message.content.split(' ');
-
-    const voiceChannel = message.member.voice.channel;
-    if (!voiceChannel) return message.channel.send('You need to be in a voice channel to play music!');
-
-    const permissions = voiceChannel.permissionsFor(message.client.user);
-    if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
-      return message.channel.send('I need the permissions to join and speak in your voice channel!');
-    }
-
-      const songInfo = await ytdl.getInfo(args[1]);
-      const song = {
-            title: songInfo.videoDetails.title,
-            url: songInfo.videoDetails.video_url,
-      };
-
-      if (!serverQueue) {
-        const queueContruct = {
-          textChannel: message.channel,
-          voiceChannel: voiceChannel,
-          connection: null,
-          songs: [],
-          volume: 5,
-          playing: true,
-        };
-
-        queue.set(message.guild.id, queueContruct);
-
-        queueContruct.songs.push(song);
-
-        try {
-          const connection = await voiceChannel.join();
-          queueContruct.connection = connection;
-          play(message.guild, queueContruct.songs[0]);
-        }
-        catch (err) {
-          console.log(err);
-          queue.delete(message.guild.id);
-          return message.channel.send(err);
-        }
-      }
-      else {
-        serverQueue.songs.push(song);
-        return message.channel.send(`${song.title} has been added to the queue!`);
-      }
-  }
-
-  function skip(message, serverQueue) {
-    if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to skip songs!');
-    if (!serverQueue) return message.channel.send('There is no song that I could skip!');
-    serverQueue.connection.dispatcher.end();
-  }
-
-  function stop(message, serverQueue) {
-    if (!message.member.voice.channel) return message.channel.send('You have to be in a voice channel to stop the music!');
-
-    if (!serverQueue) return message.channel.send('There is no song that I could stop!');
-
-    serverQueue.songs = [];
-    serverQueue.connection.dispatcher.end();
-  }
-
-  function play(guild, song) {
-    const serverQueue = queue.get(guild.id);
-    if (!song) {
-        serverQueue.voiceChannel.leave();
-        queue.delete(guild.id);
-        return;
-    }
-
-    const dispatcher = serverQueue.connection
-      .play(ytdl(song.url))
-      .on('finish', () => {
-        serverQueue.songs.shift();
-        play(guild, serverQueue.songs[0]);
-      })
-      .on('error', error => console.error(error));
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Start playing: **${song.title}**`);
-  }
-
-function deployCommands(clientID, guildID, token) {
-  const { SlashCommandBuilder } = require('@discordjs/builders');
-  const { REST } = require('@discordjs/rest');
-  const { Routes } = require('discord-api-types/v9');
-
-  const commands = [
-    // new SlashCommandBuilder().setName('help').setDescription('Replies with pong!'),
-    new SlashCommandBuilder().setName('play').setDescription('Adds a linked youtube video to the queue or starts playing if queue is empty!'),
-    new SlashCommandBuilder().setName('skip').setDescription('Skips the current song in queue!'),
-    new SlashCommandBuilder().setName('stop').setDescription('Stops me playing all together!'),
-    new SlashCommandBuilder().setName('countdown').setDescription('The Final Countdown · Europe'),
-  ]
-    .map(command => command.toJSON());
-
-  const rest = new REST({ version: '9' }).setToken(token);
-
-  rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands })
-    .then(() => console.log('Successfully registered application commands.'))
-    .catch(console.error);
+for (const file of commandFiles) {
+	const command = require(`./commands/${file}`);
+	// Set a new item in the Collection
+	// With the key as the command name and the value as the exported module
+	client.commands.set(command.data.name, command);
 }
 
+const eventFiles = fs.readdirSync('./events').filter(file => file.endsWith('.js'));
+
+for (const file of eventFiles) {
+  const event = require(`./events/${file}`);
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args));
+  }
+  else {
+    client.on(event.name, (...args) => event.execute(...args));
+  }
+}
+
+console.log(' ');
 // Bot Login
 client.login(bot_token);
