@@ -1,5 +1,13 @@
 const ytdl = require('ytdl-core');
-const { joinVoiceChannel, createAudioPlayer, NoSubscriberBehavior, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
+const {
+	joinVoiceChannel,
+	createAudioPlayer,
+	NoSubscriberBehavior,
+	createAudioResource,
+	AudioPlayerStatus,
+	StreamType
+} = require('@discordjs/voice');
+const { MessageEmbed } = require('discord.js');
 
 const queue = new Map();
 
@@ -145,6 +153,31 @@ module.exports = {
 		serverQueue.connection.destroy();
 		return interaction.editReply('Music stopped!');
 	},
+
+	songQueue(interaction) {
+		const serverQueue = queue.get(interaction.guild.id);
+
+		if (!interaction.member.voice.channel) return interaction.editReply('You have to be in a voice channel to see the queue!');
+		if (!serverQueue) return interaction.editReply('There is no queue that I could show!');
+
+		const queueEmbed = new MessageEmbed()
+		.setColor('#0099ff')
+		.setTitle(interaction.guild.name + ' song queue')
+		.setAuthor({ name: interaction.client.user.username, iconURL: 'https://cdn.discordapp.com/avatars/937313195255808040/59ea6b5d233d158528bc4a333bf069aa.webp' })
+		.setTimestamp()
+		.setFooter({ text: interaction.guild.name + ' song queue', iconURL: 'https://cdn.discordapp.com/avatars/937313195255808040/59ea6b5d233d158528bc4a333bf069aa.webp' });
+
+		queueEmbed.addField('Currently playing', serverQueue.songs[0].title, false);
+		let songList = '';
+		if (serverQueue.songs.length >= 2) songList = serverQueue.songs[1].title;
+		if (serverQueue.songs.length >= 3) songList += '\n' + serverQueue.songs[2].title;
+		if (serverQueue.songs.length >= 4) songList += '\n' + serverQueue.songs[3].title;
+		if (serverQueue.songs.length >= 5) songList += '\n' + serverQueue.songs[4].title;
+
+		queueEmbed.addField('Up next', songList, false);
+
+		return interaction.editReply({ embeds: [queueEmbed] });
+	},
 };
 
 function play(guild, song) {
@@ -155,7 +188,7 @@ function play(guild, song) {
 		return;
 	}
 
-	const resource = createAudioResource(ytdl(song.url));
+	const resource = createAudioResource(ytdl(song.url, { filter: 'audioonly' }), { inputType: StreamType.Arbitrary });
 	serverQueue.player.play(resource);
 	serverQueue.player.on(AudioPlayerStatus.Idle, () => {
 		serverQueue.songs.shift();

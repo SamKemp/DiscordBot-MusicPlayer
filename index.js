@@ -1,4 +1,4 @@
-const { bot_token, clientId } = require('./config.json');
+const { bot_token, clientId, guildId } = require('./config.json');
 
 const { Client, Collection, Intents } = require('discord.js');
 const { REST } = require('@discordjs/rest');
@@ -21,10 +21,17 @@ for (const file of commandFiles) {
 
 const rest = new REST({ version: '9' }).setToken(bot_token);
 
+// Register (/) commands
 (async () => {
 	try {
 		console.log('Started refreshing application (/) commands.');
 
+		// Development guild commands
+		await rest.put(
+			Routes.applicationGuildCommands(clientId, guildId),
+			{ body: commands },
+		);
+		// Production glocal commands
 		await rest.put(
 			Routes.applicationCommands(clientId),
 			{ body: commands },

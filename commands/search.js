@@ -13,7 +13,7 @@ const opts = {
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('search')
-		.setDescription('Searched for a youtube video!')
+		.setDescription('searches for a youtube video and then adds to the queue or starts playing if queue is empty!')
 		.addStringOption(option =>
 			option.setName('query')
 			.setDescription('Term to search for')
